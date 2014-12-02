@@ -1,0 +1,44 @@
+
+DECLARE @NTILE_Var varchar(55) = 100;
+declare @subQuery varchar(max) = 'select 
+from 
+where '
+declare @orderBy varchar(max) = '[last_used_date]'
+declare @partitionBy varchar(max) = 'customer_id, [customer_status_id]'
+
+
+declare @query nvarchar(max) = 
+'with cte as (
+
+	select ntile('+@NTILE_Var+') over(partition by '+@partitionBy+'  order by '+@orderBy+') N , '+@orderBy+', '+@partitionBy+'
+	from ('+@subQuery+') a
+)
+
+select  '+@partitionBy+',  max([Max]) [Max],min([95]) [95th],min([90]) [90th],min([75]) [75th],min([50]) [50th],min([25]) [25th],min([10]) [10th] ,min([5]) [5th] ,min([Min]) [Min], datediff(day,min([25]),min([75])) IQR, datediff(day,min([min]),max([max])) Range, sum(Cnt) Cnt
+from
+(
+select '+@partitionBy+', N, max( '+@orderBy+' ) [Max],
+		case N
+	   when 95 then dateadd(minute,avg(datediff(minute,getdate(),'+@orderBy+')),getdate()) end [95], case N
+	   when 90 then dateadd(minute,avg(datediff(minute,getdate(),'+@orderBy+')),getdate()) end [90], case N
+	   when 75 then dateadd(minute,avg(datediff(minute,getdate(),'+@orderBy+')),getdate()) end [75], case N
+	   when 50 then dateadd(minute,avg(datediff(minute,getdate(),'+@orderBy+')),getdate()) end [50], case N
+	   when 25 then dateadd(minute,avg(datediff(minute,getdate(),'+@orderBy+')),getdate()) end [25], case N
+	   when 10 then dateadd(minute,avg(datediff(minute,getdate(),'+@orderBy+')),getdate()) end [10], case N
+	   when 5 then dateadd(minute,avg(datediff(minute,getdate(),'+@orderBy+')),getdate()) end [5],
+	   MIN('+@orderBy+') [Min],
+	   
+	   count(9) Cnt
+from
+
+cte
+group by N, '+ @partitionBy+') b
+group by '+ @partitionBy +'
+having count(9) > 99'
+
+
+print @query
+
+ EXECUTE sp_executesql @query
+
+
