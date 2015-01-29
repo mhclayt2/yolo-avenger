@@ -1,0 +1,29 @@
+create table #src (Date datetime, [AC-1] decimal(8,4),  [AM-1] decimal(8,4), [AM-1E] decimal(8,4),[AM-1W] decimal(8,4), [AM-2] decimal(8,4))
+Insert into #src (Date,[AC-1],[AM-1],[AM-1E]) values('1996-09-18', null, null, null),('1996-11-26', null, null, null),('1991-01-22', 26.45, null, null),('1991-01-28', 25.73, null, null)
+
+
+create table #target (Piezmeter varchar(10), TOC decimal(8,4), RedFlag decimal(8,4))
+Insert into #target values('AC-1',738.65, 720.00),('AM-1',723.31, 720.00),('AM-1E',722.7, 720.00), ('AM-1W',722.5, 720.00),('AM-2',723.3, 720.00)
+
+
+select *
+from #src
+
+select *
+from #target
+
+;with mycte as (
+Select col,val, * from (
+select SUM([AC-1]) as [AC-1], SUM([AM-1]) as [AM-12], SUM([AM-1E]) as [AM-1E],SUM([AM-1W]) as [AM-1W], SUM([AM-2]) as [AM-2]  from #src) t
+
+Cross apply (values('AC-1',[AC-1]),('AM-1', [AM-12]),('AM-1E', [AM-1E]),('AM-1W', [AM-1W]),('AM-2',[AM-2]) ) d(col, val)
+
+)
+
+select Piezmeter, TOC-ISNULL(val,0) as val, RedFlag 
+from #target  t Left join mycte m on t.Piezmeter=m.col
+
+
+
+
+drop table #src,#target
