@@ -21,10 +21,13 @@ order by sum(reserved_page_count) * 8.0 / 1024 desc
 SELECT 
     t.NAME AS TableName,
     s.Name AS SchemaName,
-    p.rows AS RowCounts,
-    SUM(a.total_pages) * 8 AS TotalSpaceKB, 
-    SUM(a.used_pages) * 8 AS UsedSpaceKB, 
-    (SUM(a.total_pages) - SUM(a.used_pages)) * 8 AS UnusedSpaceKB
+    i.Name as IndexName,
+    t.CreateDate as TableCreateDate,
+    t.ModifyDate as TableModifyDate
+    sum(p.rows) AS RowCounts,
+    SUM(a.total_pages) * 8/1024 AS TotalSpaceMB, 
+    SUM(a.used_pages) * 8/1024 AS UsedSpaceMB, 
+    (SUM(a.total_pages) - SUM(a.used_pages)) * 8/1024 AS UnusedSpaceMB
 FROM 
     sys.tables t
 INNER JOIN      
@@ -39,7 +42,8 @@ WHERE
     t.NAME NOT LIKE 'dt%' 
     AND t.is_ms_shipped = 0
     AND i.OBJECT_ID > 255 
+    AND i.index_id <=1
 GROUP BY 
-    t.Name, s.Name, p.Rows
-ORDER BY totalspacekb desc,
+    t.Name, s.Name, p.Rows, i.Name
+ORDER BY totalspaceMb desc,
     t.Name
