@@ -1,0 +1,13 @@
+-- Deduping Example
+
+
+
+delete e
+--select *
+from ##example e
+inner join (select email_address, ID, row_number() over(partition by email_address order by ID) RN
+	from ##example
+	) a
+	on e.ID = a.ID
+	and a.RN>1
+	--order by e.email_address
